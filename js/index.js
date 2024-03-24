@@ -1,10 +1,13 @@
 
 const BACKEND_ROOT_URL = 'http://localhost:3001'
+import { Todos } from "./class/Todos.js"
+
+const todos = new Todos(BACKEND_ROOT_URL)
 
 const list = document.querySelector('ul')//选择页面上的第一个 <ul> 元素，并将其存储在 list 变量中
 const input = document.querySelector('input')//选择页面上的第一个 <input> 元素，并将其存储在 input 变量中
 
-//input.disabled = true
+input.disabled = false
 
 /*input.addEventListener('keypress',(event) => {   //输入框按下键盘上的任意键时，会触发这个监听器//event 参数表示触发的事件对象
     if(event.key === 'Enter'){   //箭头函数，用于定义事件监听器的处理函数
@@ -28,14 +31,39 @@ const input = document.querySelector('input')//选择页面上的第一个 <inpu
 然后，我们获取了用户在输入框中输入的任务数据，并将其存储在 task 变量中。
 接着，我们检查了用户输入的任务数据是否为空。如果不为空，我们创建了一个新的 <li> 元素，并将用户输入的任务数据添加到这个 <li> 元素中。最后，我们将这个 <li> 元素添加到列表中，并清空了输入框中的内容。*/
 
-const renderTask = (task) =>{
+const renderTask = (task) => {
     const li = document.createElement('li')
     li.setAttribute('class','list-group-item')
-    li.innerHTML = task
+    li.setAttribute('data_key',task.getId().toString())
+    //li.innerHTML = task.getText()
+    renderSpan(li,task.getText())
+    renderLink(li,task.getId())
     list.append(li)
 }
 
-const getTasks = async () =>{
+const renderSpan = (li,text) => {
+    const span = li.appendChild(document.createElement('span'))
+    span.innerHTML = text
+    //li.append(span)
+}
+
+const renderLink = (li,id) => {
+    const a =li.appendChild(document.createElement('a'))
+    a.innerHTML ='<i class="bi bi-trash"></i>'
+    a.setAttribute('style','float:right')
+    a.addEventListener('click',(event) => {
+        todos.removeTask(id).then((removed_id) => {
+        const li_to_remove = document.querySelector(`li[data_key='${removed_id}']`)
+        if (li_to_remove){
+            list.removeChild(li_to_remove)
+        }
+    }).catch((error) => {
+        alert(error)
+    })
+    })
+}
+
+/*const getTasks = async () =>{
     try{
         const response = await fetch(BACKEND_ROOT_URL)
         const json = await response.json()
@@ -47,10 +75,21 @@ const getTasks = async () =>{
         alert("Error retrieving tasks"+ error.message)
     }
 }
+*/
+const getTasks = () => {
+    todos.getTasks().then((tasks) => {
+        tasks.forEach(task => {
+            renderTask(task)
+        })
+    }).catch((error) => {
+        alert(error)
+    })
+}
 
-const saveTask =async (task) => {
+
+const saveTask = async (task) => {
     try{
-        const json = JSON.stringify({descrption: task})
+        const json = JSON.stringify({description: task})
         const response = await fetch(BACKEND_ROOT_URL + '/new',{
             method: 'post',
             headers: {
@@ -69,9 +108,11 @@ input.addEventListener('keypress',(event) => {
         event.preventDefault()
         const task = input.value.trim()
         if (task !== ''){
-            saveTask(task).then((json)=>{
+            //saveTask(task).then((json)=>{
+            todos.addTask(task).then((task) => {
                 renderTask(task)
                 input.value = ''
+                input.focus()
             })
            
         }
@@ -79,3 +120,66 @@ input.addEventListener('keypress',(event) => {
 })
 
 getTasks()
+/*
+
+//index.js
+
+const BACKEND_ROOT_URL = 'http://localhost:3001/'
+import { Todos } from "./class/Todos.js"
+
+const todos = new Todos(BACKEND_ROOT_URL)
+
+const list = document.querySelector('ul')
+const input = document.querySelector('input')
+
+input.disabled = false
+
+const renderTask = (task) => {
+    const li = document.createElement('li')
+    li.setAttribute('class','list-group-item')
+    li.innerHTML = task.getText()
+    list.append(li)
+}
+
+const getTasks = async () => {
+    todos.getTasks().then((tasks)=> {
+        tasks.forEach(task => {
+            renderTask(task)
+        })
+    }).catch((error)=> {
+        alert(error)
+    })
+}
+
+const saveTask = async (task) => {
+    try {
+        const json = JSON.stringify({description: task})
+        const response = await fetch(BACKEND_ROOT_URL + '/new',{
+            method: 'post',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: json
+        })
+        return response.json() 
+    } catch (error) {
+        alert("Error saving task " + error.message)
+    }
+}
+
+input.addEventListener('keypress',(event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault()
+        const task = input.value.trim()
+        if (task !== '') {
+            todos.addTask(task).then((task) => {
+                renderTask(task)
+                input.value = ''
+                input.focus()
+            })
+        }
+    }
+})
+
+getTasks()
+*/
